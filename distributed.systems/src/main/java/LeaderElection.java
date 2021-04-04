@@ -1,14 +1,24 @@
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.server.quorum.Leader;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
 public class LeaderElection implements Watcher {
     private static final String ZOOKEEPER_ADDRESS = "localhost:2181";
+    private static final int DEFAULT_PORT = 8080;
     private static final String ELECTION_NAMESPACE = "/election";
     private static final String TARGET_ZNODE = "/target_znode";
     private String currentZnodeName;
+    private final OnElectionCallback onElectionCallback;
+
+    public LeaderElection(ZooKeeper zooKeeper, OnElectionCallback onElectionCallback) {
+        this.zooKeeper = zooKeeper;
+        this.onElectionCallback = onElectionCallback;
+    }
+
     /*
         Server checks communications with clients and if clients don't
         respond in `SESSION_TIMEOUT` milliseconds it will consider the client as disconnected
@@ -93,6 +103,7 @@ public class LeaderElection implements Watcher {
             String smallestChild = children.get(0);
             if (smallestChild.equals(currentZnodeName)) {
                 System.out.println("I am the leader");
+                onElectionCallback.onElectionToBeLeader();
                 return;
             } else {
                 System.out.println("I am not the leader. The current leader is " + smallestChild);
@@ -106,6 +117,7 @@ public class LeaderElection implements Watcher {
             }
         }
 
+        onElectionCallback.onWorker();
         System.out.println("Watching znode " + predecessorZnodeName);
     }
 
@@ -128,7 +140,12 @@ public class LeaderElection implements Watcher {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException, KeeperException {
-        LeaderElection leaderElection = new LeaderElection();
+        int currentServicePort = args.length == 1 ? Integer.parseInt(args[0]) : DEFAULT_PORT;
+
+        ServiceRegistry serviceRegistry = new ServiceRegistry();
+        OnElectionAction onElectionAction = new OnElectionAction(serviceRegistry, currentServicePort);
+
+        LeaderElection leaderElection = new LeaderElection(serviceRegistry.getZookeeper(), onElectionAction);
         leaderElection.connectToZookeeper();
 
         // Leader election implementation
