@@ -1,5 +1,4 @@
 import org.apache.zookeeper.KeeperException;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -23,11 +22,7 @@ public class OnElectionAction implements OnElectionCallback {
         try {
             String currentServerAddress = String.format("http://%s:%d", InetAddress.getLocalHost().getCanonicalHostName(), port);
             serviceRegistry.registerToCluster(currentServerAddress);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (KeeperException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

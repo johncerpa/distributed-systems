@@ -1,7 +1,5 @@
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.server.quorum.Leader;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -64,6 +62,12 @@ public class LeaderElection implements Watcher {
         // After an update get all up to date data and print
         try {
             watchTargetZnode();
+        } catch (KeeperException | InterruptedException ignored) {}
+
+        try {
+            // Do some work here!
+            watchTargetZnode();
+            System.out.println("Hello world");
         } catch (KeeperException | InterruptedException ignored) {}
     }
 
